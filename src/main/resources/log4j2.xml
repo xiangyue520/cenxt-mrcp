@@ -1,7 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <Properties>
         <Property name="project-name">cenxt-mrcp</Property>
-        <Property name="log-path">/applog/${project-name}</Property>
+<!--        <Property name="log-path">/applog/${project-name}</Property>-->
+        <Property name="log-path">/tmp/${project-name}</Property>
     </Properties>
 
     <Appenders>
@@ -25,11 +27,13 @@
     </Appenders>
 
     <Loggers>
+        <Logger name="cn.cenxt" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
         <Root level="INFO">
             <AppenderRef ref="RollingFile"/>
             <AppenderRef ref="Console"/>
         </Root>
-        <!--        <Logger name="cn.cenxt" level="debug"/>-->
 
     </Loggers>
 </configuration>
