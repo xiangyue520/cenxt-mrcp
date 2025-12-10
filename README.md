@@ -2,7 +2,13 @@
 
 CENXT MRCP Server 是一个基于Java实现的MRCPv2协议服务器，支持语音识别(ASR)、语音合成(TTS)和AI对话功能。
 
-项目地址：https://github.com/cenxt/cenxt-mrcp
+项目地址：https://github.com/xiangyue520/cenxt-mrcp.git
+
+该项目参考了 https://github.com/cenxt/cenxt-mrcp ,并进行了一定的修改和优化
+
+## 问题
+1. 当使用cenxt.ai.default-engine为echo时,即将用户说的话原样进行tts复述,发现时延基本都在3s的样子,无法满足需要,需根据实际场景进行使用
+2. 好的是进行了统一抽象,可以自己实现对应的asr或者tts引擎,只需要实现对应的接口即可,非常方便
 
 ## 功能特性
 
@@ -16,15 +22,17 @@ CENXT MRCP Server 是一个基于Java实现的MRCPv2协议服务器，支持语�
 - **灵活路由**：支持自定义路由，和根据被叫号前缀，路由到不同的ASR/TTS引擎
 - **容器化部署**：提供Docker支持
 - **虚拟机部署**：提供Linux安装包支持
-- QQ交流群：1062716087
+
+
+
 ## 技术架构
 
-- 基于Spring Boot 1.5.10及以上
-- Java 1.8
+- 基于Spring Boot 2.6.3及以上
+- Java 11
 
 ## 系统要求
 
-- Java 1.8或更高版本
+- Java 11或更高版本
 - 至少128MB可用内存
 
 ## 快速开始
@@ -368,3 +376,62 @@ cenxt:
     # 可选，可以不设置 自动获取指定前缀的ip作为对外ip
     external-ip-prefix: 192.168
 ```
+
+## freeswitch配置mrcp-profiles
+例如配置在同一台机器上的信息如下,
+```xml
+cenxt.xml
+
+<include>
+  <profile name="cenxt-mrcpserver" version="2">
+    <param name="client-ip" value="$${local_ip_v4}"/>
+    <param name="client-port" value="5060"/>
+    <param name="server-ip" value="127.0.0.1"/>
+    <param name="server-port" value="7010"/>
+    <param name="resource-location" value=""/>
+    <param name="sip-transport" value="tcp"/>
+    <param name="sdp-origin" value="Freeswitch"/>
+    <param name="rtp-ip" value="$${local_ip_v4}"/>
+    <param name="rtp-port-min" value="40000"/>
+    <param name="rtp-port-max" value="50000"/>
+    <param name="speechsynth" value="speechsynthesizer"/>
+    <param name="speechrecog" value="speechrecognizer"/>
+    <param name="codecs" value="PCMA PCMU L16/96/8000"/>
+  </profile>
+</include>
+```
+配置unimrcp.conf.xml
+```xml
+<configuration name="unimrcp.conf" description="UniMRCP Client">
+  <settings>
+    <!-- UniMRCP profile to use for TTS -->
+    <!-- value对应ali.xml中profile的name -->
+    <param name="default-tts-profile" value="cenxt-mrcpserver"/>
+    <!-- UniMRCP profile to use for ASR -->
+    <!-- value对应ali.xml中profile的name -->
+    <param name="default-asr-profile" value="cenxt-mrcpserver"/>
+    <!-- UniMRCP logging level to appear in freeswitch.log.  Options are:
+                           EMERGENCY|ALERT|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG -->
+    <param name="log-level" value="DEBUG"/>
+    <!-- Enable events for profile creation, open, and close -->
+    <param name="enable-profile-events" value="false"/>
+
+    <param name="max-connection-count" value="100"/>
+    <param name="offer-new-connection" value="1"/>
+    <param name="request-timeout" value="3000"/>
+  </settings>
+
+  <profiles>
+    <X-PRE-PROCESS cmd="include" data="../mrcp_profiles/*.xml"/>
+  </profiles>
+</configuration>
+```
+
+
+
+
+## 构建
+docker build -t {{host}}/cenxt-mrcp:0.0.1 .
+
+## 运行
+docker rm -f cenxt-mrcp && docker run --network=host -d --name cenxt-mrcp  {{host}}/cenxt-mrcp:0.0.1
